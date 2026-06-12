@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { getTopicById } from '../api/topics.js';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import { formatDate } from '../utils/date.js';
@@ -119,6 +119,7 @@ function AiIcon({ type }) {
 
 function TopicDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
   const [topic, setTopic] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -178,6 +179,9 @@ function TopicDetailPage() {
       </Link>
 
       {isLoading && <LoadingSpinner label="Cargando tema" />}
+      {location.state?.successMessage && (
+        <p className="status-message success">{location.state.successMessage}</p>
+      )}
       {errorMessage && <p className="status-message error">{errorMessage}</p>}
 
       {!isLoading && topic && (

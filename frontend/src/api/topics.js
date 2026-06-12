@@ -1,12 +1,17 @@
 const API_BASE_URL = 'http://localhost:8080/api';
 
 async function request(path, options = {}) {
+  const isFormData = options.body instanceof FormData;
+  const { headers, ...fetchOptions } = options;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-    },
-    ...options
+    ...fetchOptions,
+    headers: isFormData
+      ? headers
+      : {
+          'Content-Type': 'application/json',
+          ...headers
+        }
   });
 
   if (!response.ok) {
@@ -33,5 +38,19 @@ export function createTopic(topic) {
   return request('/topics', {
     method: 'POST',
     body: JSON.stringify(topic)
+  });
+}
+
+export function importPdf(file, title) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  if (title?.trim()) {
+    formData.append('title', title.trim());
+  }
+
+  return request('/topics/import-pdf', {
+    method: 'POST',
+    body: formData
   });
 }

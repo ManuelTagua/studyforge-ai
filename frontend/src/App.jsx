@@ -8,10 +8,10 @@ import TopicDetailPage from './pages/TopicDetailPage.jsx';
 function App() {
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') {
-      return 'light';
+      return 'dark';
     }
 
-    return localStorage.getItem('studyforge-theme') || 'light';
+    return localStorage.getItem('studyforge-theme') || 'dark';
   });
 
   useEffect(() => {

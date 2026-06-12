@@ -21,7 +21,7 @@ function HistoryPage() {
         }
       } catch (error) {
         if (isMounted) {
-          setErrorMessage('No se pudo cargar el historial. Revisa que el backend esté en marcha.');
+          setErrorMessage('No hemos podido cargar tus temas ahora mismo. Inténtalo de nuevo en unos instantes.');
         }
       } finally {
         if (isMounted) {

@@ -1,6 +1,8 @@
 import { NavLink, Link } from 'react-router-dom';
 
-function Navbar() {
+function Navbar({ theme, onToggleTheme }) {
+  const isDark = theme === 'dark';
+
   return (
     <header className="navbar">
       <Link className="brand" to="/">
@@ -15,6 +17,15 @@ function Navbar() {
         <NavLink to="/history" className={({ isActive }) => (isActive ? 'active' : undefined)}>
           Historial
         </NavLink>
+        <button
+          className="theme-toggle"
+          type="button"
+          onClick={onToggleTheme}
+          aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          title={isDark ? 'Modo claro' : 'Modo oscuro'}
+        >
+          <span aria-hidden="true">{isDark ? '☀' : '☾'}</span>
+        </button>
       </nav>
     </header>
   );

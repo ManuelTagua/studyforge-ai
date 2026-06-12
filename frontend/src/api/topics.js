@@ -34,6 +34,10 @@ export function getTopicById(id) {
   return request(`/topics/${id}`);
 }
 
+export function getTopicContents(id) {
+  return request(`/topics/${id}/contents`);
+}
+
 export function createTopic(topic) {
   return request('/topics', {
     method: 'POST',
@@ -52,5 +56,29 @@ export function importPdf(file, title) {
   return request('/topics/import-pdf', {
     method: 'POST',
     body: formData
+  });
+}
+
+export function generateSummary(topicId) {
+  return request(`/ai/summary/${topicId}`, {
+    method: 'POST'
+  });
+}
+
+export function generateQuiz(topicId) {
+  return request(`/ai/quiz/${topicId}`, {
+    method: 'POST'
+  });
+}
+
+export function generateFlashcards(topicId) {
+  return request(`/ai/flashcards/${topicId}`, {
+    method: 'POST'
+  });
+}
+
+export function generateExplanation(topicId) {
+  return request(`/ai/explanation/${topicId}`, {
+    method: 'POST'
   });
 }

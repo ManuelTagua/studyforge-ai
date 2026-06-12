@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { getTopicById } from '../api/topics.js';
+import {
+  generateExplanation,
+  generateFlashcards,
+  generateQuiz,
+  generateSummary,
+  getTopicById,
+  getTopicContents
+} from '../api/topics.js';
+import FlashcardsResult from '../components/FlashcardsResult.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import MarkdownContent from '../components/MarkdownContent.jsx';
+import QuizResult from '../components/QuizResult.jsx';
 import { formatDate } from '../utils/date.js';
 
 const generationOptions = [
@@ -32,10 +42,10 @@ const generationOptions = [
 ];
 
 const resultTabs = [
-  { id: 'summary', label: 'Resumen' },
-  { id: 'quiz', label: 'Quiz' },
-  { id: 'flashcards', label: 'Flashcards' },
-  { id: 'explanation', label: 'Explicación' }
+  { id: 'summary', label: 'Resumen', type: 'SUMMARY' },
+  { id: 'quiz', label: 'Quiz', type: 'QUIZ' },
+  { id: 'flashcards', label: 'Flashcards', type: 'FLASHCARDS' },
+  { id: 'explanation', label: 'Explicación', type: 'SIMPLIFIED_EXPLANATION' }
 ];
 
 function AiIcon({ type }) {
@@ -117,13 +127,31 @@ function AiIcon({ type }) {
   );
 }
 
+function GeneratedResult({ activeTab, content }) {
+  if (activeTab === 'quiz') {
+    return <QuizResult content={content} />;
+  }
+
+  if (activeTab === 'flashcards') {
+    return <FlashcardsResult content={content} fallback={<MarkdownContent content={content} />} />;
+  }
+
+  return <MarkdownContent content={content} />;
+}
+
 function TopicDetailPage() {
   const { id } = useParams();
   const location = useLocation();
   const [topic, setTopic] = useState(null);
+  const [generatedContents, setGeneratedContents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+  const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
   const [activeTab, setActiveTab] = useState('summary');
 
   useEffect(() => {
@@ -132,9 +160,14 @@ function TopicDetailPage() {
     async function loadTopic() {
       try {
         setIsLoading(true);
-        const data = await getTopicById(id);
+        const [topicData, contentsData] = await Promise.all([
+          getTopicById(id),
+          getTopicContents(id)
+        ]);
+
         if (isMounted) {
-          setTopic(data);
+          setTopic(topicData);
+          setGeneratedContents(contentsData);
           setErrorMessage('');
         }
       } catch (error) {
@@ -168,8 +201,74 @@ function TopicDetailPage() {
     };
   }, [topic]);
 
-  function handleGenerationClick(optionTitle) {
-    setNoticeMessage(`${optionTitle}: Próximamente disponible`);
+  const activeGeneratedContent = useMemo(() => {
+    const activeType = resultTabs.find((tab) => tab.id === activeTab)?.type;
+    return generatedContents.find((content) => content.type === activeType);
+  }, [activeTab, generatedContents]);
+
+  async function handleGenerationClick(option) {
+    setNoticeMessage('');
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      const isQuiz = option.id === 'quiz';
+      const isFlashcards = option.id === 'flashcards';
+      const isExplanation = option.id === 'explanation';
+      const targetTab = isQuiz ? 'quiz' : isFlashcards ? 'flashcards' : isExplanation ? 'explanation' : 'summary';
+
+      if (isQuiz) {
+        setIsGeneratingQuiz(true);
+      } else if (isFlashcards) {
+        setIsGeneratingFlashcards(true);
+      } else if (isExplanation) {
+        setIsGeneratingExplanation(true);
+      } else {
+        setIsGeneratingSummary(true);
+      }
+
+      const generatedContent = isQuiz
+        ? await generateQuiz(id)
+        : isFlashcards
+        ? await generateFlashcards(id)
+        : isExplanation
+        ? await generateExplanation(id)
+        : await generateSummary(id);
+      setGeneratedContents((currentContents) => [
+        generatedContent,
+        ...currentContents.filter((content) => content.id !== generatedContent.id)
+      ]);
+      setActiveTab(targetTab);
+      setSuccessMessage(
+        isQuiz
+          ? 'Quiz generado correctamente.'
+          : isFlashcards
+          ? 'Flashcards generadas correctamente.'
+          : isExplanation
+          ? 'Explicación generada correctamente.'
+          : 'Resumen generado correctamente.'
+      );
+    } catch (error) {
+      const message = error.message || '';
+      if (message.includes('API key')) {
+        setErrorMessage('Gemini no está configurado todavía. Añade GOOGLE_API_KEY o GEMINI_API_KEY.');
+      } else {
+        setErrorMessage(
+          option.id === 'quiz'
+            ? 'No se pudo generar el quiz. Intentalo de nuevo en unos instantes.'
+            : option.id === 'flashcards'
+            ? 'No se pudieron generar las flashcards. Intentalo de nuevo en unos instantes.'
+            : option.id === 'explanation'
+            ? 'No se pudo generar la explicación. Intentalo de nuevo en unos instantes.'
+            : 'No se pudo generar el resumen. Inténtalo de nuevo en unos instantes.'
+        );
+      }
+    } finally {
+      setIsGeneratingSummary(false);
+      setIsGeneratingQuiz(false);
+      setIsGeneratingFlashcards(false);
+      setIsGeneratingExplanation(false);
+    }
   }
 
   return (
@@ -179,9 +278,7 @@ function TopicDetailPage() {
       </Link>
 
       {isLoading && <LoadingSpinner label="Cargando tema" />}
-      {location.state?.successMessage && (
-        <p className="status-message success">{location.state.successMessage}</p>
-      )}
+      {successMessage && <p className="status-message success">{successMessage}</p>}
       {errorMessage && <p className="status-message error">{errorMessage}</p>}
 
       {!isLoading && topic && (
@@ -220,10 +317,9 @@ function TopicDetailPage() {
 
             <aside className="topic-side-panel" aria-label="Estado de IA">
               <p className="eyebrow">Preparado para IA</p>
-              <h2>Contenido pendiente de generar</h2>
+              <h2>Resumen con Gemini</h2>
               <p>
-                Esta vista ya está lista para recibir resúmenes, quizzes, flashcards y
-                explicaciones cuando activemos la integración con IA.
+                El resumen, el quiz, las flashcards y la explicación fácil ya pueden generarse con IA.
               </p>
             </aside>
           </div>
@@ -231,7 +327,7 @@ function TopicDetailPage() {
           <section className="ai-generation-section">
             <div className="section-title-row">
               <div>
-                <p className="eyebrow">Futura generación</p>
+                <p className="eyebrow">Generación IA</p>
                 <h2>Generar contenido con IA</h2>
               </div>
               {noticeMessage && <p className="status-message info compact">{noticeMessage}</p>}
@@ -243,13 +339,29 @@ function TopicDetailPage() {
                   className="generation-card"
                   type="button"
                   key={option.id}
-                  onClick={() => handleGenerationClick(option.title)}
+                  onClick={() => handleGenerationClick(option)}
+                  disabled={
+                    (option.id === 'summary' && isGeneratingSummary) ||
+                    (option.id === 'quiz' && isGeneratingQuiz) ||
+                    (option.id === 'flashcards' && isGeneratingFlashcards) ||
+                    (option.id === 'explanation' && isGeneratingExplanation)
+                  }
                 >
                   <span className="generation-icon">
                     <AiIcon type={option.icon} />
                   </span>
                   <span className="generation-title">{option.title}</span>
-                  <span className="generation-description">{option.description}</span>
+                  <span className="generation-description">
+                    {option.id === 'summary' && isGeneratingSummary
+                      ? 'Generando resumen...'
+                      : option.id === 'quiz' && isGeneratingQuiz
+                      ? 'Generando quiz...'
+                      : option.id === 'flashcards' && isGeneratingFlashcards
+                      ? 'Generando flashcards...'
+                      : option.id === 'explanation' && isGeneratingExplanation
+                      ? 'Generando explicación...'
+                      : option.description}
+                  </span>
                 </button>
               ))}
             </div>
@@ -271,8 +383,12 @@ function TopicDetailPage() {
               ))}
             </div>
 
-            <div className="result-panel" role="tabpanel">
-              <p>No hay contenido generado todavía.</p>
+            <div className={activeGeneratedContent ? 'result-panel has-content' : 'result-panel'} role="tabpanel">
+              {activeGeneratedContent ? (
+                <GeneratedResult activeTab={activeTab} content={activeGeneratedContent.content} />
+              ) : (
+                <p>No hay contenido generado todavía.</p>
+              )}
             </div>
           </section>
         </article>

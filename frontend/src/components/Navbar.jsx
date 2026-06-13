@@ -15,7 +15,7 @@ function Navbar({ theme, onToggleTheme }) {
           Crear tema
         </NavLink>
         <NavLink to="/history" className={({ isActive }) => (isActive ? 'active' : undefined)}>
-          Historial
+          Mis apuntes
         </NavLink>
         <button
           className="theme-toggle"

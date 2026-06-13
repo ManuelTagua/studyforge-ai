@@ -64,7 +64,7 @@ public class GeminiService {
         if (apiKey == null || apiKey.isBlank()) {
             throw new ResponseStatusException(
                     BAD_REQUEST,
-                    "No hay una API key de Gemini configurada. Define GOOGLE_API_KEY o GEMINI_API_KEY."
+                    "No se pudo completar la acción. Inténtalo de nuevo en unos segundos."
             );
         }
 
@@ -91,13 +91,13 @@ public class GeminiService {
         } catch (RestClientResponseException exception) {
             throw new ResponseStatusException(
                     BAD_GATEWAY,
-                    "No se pudo generar el " + contentName + " con Gemini. Intentalo de nuevo en unos instantes.",
+                    "No se pudo completar la acción. Inténtalo de nuevo en unos segundos.",
                     exception
             );
         } catch (RestClientException exception) {
             throw new ResponseStatusException(
                     BAD_GATEWAY,
-                    "No se pudo conectar con Gemini. Intentalo de nuevo en unos instantes.",
+                    "No se pudo completar la acción. Inténtalo de nuevo en unos segundos.",
                     exception
             );
         }
@@ -233,7 +233,7 @@ public class GeminiService {
             if (generatedText.isBlank()) {
                 throw new ResponseStatusException(
                         BAD_GATEWAY,
-                        "Gemini no devolvio contenido para este " + contentName + "."
+                        "No se pudo completar la acción. Inténtalo de nuevo en unos segundos."
                 );
             }
 
@@ -241,7 +241,7 @@ public class GeminiService {
             if (cleanGeneratedText.isBlank()) {
                 throw new ResponseStatusException(
                         BAD_GATEWAY,
-                        "Gemini no devolvio contenido util para este " + contentName + "."
+                        "No se pudo completar la acción. Inténtalo de nuevo en unos segundos."
                 );
             }
 
@@ -251,7 +251,7 @@ public class GeminiService {
         } catch (Exception exception) {
             throw new ResponseStatusException(
                     BAD_GATEWAY,
-                    "No se pudo leer la respuesta de Gemini.",
+                    "No se pudo completar la acción. Inténtalo de nuevo en unos segundos.",
                     exception
             );
         }

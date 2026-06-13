@@ -32,7 +32,7 @@ public class StudyTopicService {
     @Transactional(readOnly = true)
     public StudyTopic findById(Long id) {
         return studyTopicRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Study topic not found"));
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "No se pudo encontrar este apunte."));
     }
 
     @Transactional
@@ -46,7 +46,10 @@ public class StudyTopicService {
 
         String extractedText = extractText(file).trim();
         if (extractedText.isBlank()) {
-            throw new ResponseStatusException(BAD_REQUEST, "El PDF no contiene texto extraíble.");
+            throw new ResponseStatusException(
+                    BAD_REQUEST,
+                    "No hemos podido extraer texto de este PDF. Puede que sea un PDF escaneado o basado en imágenes."
+            );
         }
 
         String topicTitle = normalizeTitle(title, file.getOriginalFilename());
@@ -80,7 +83,7 @@ public class StudyTopicService {
             PDFTextStripper textStripper = new PDFTextStripper();
             return textStripper.getText(document);
         } catch (IOException exception) {
-            throw new ResponseStatusException(BAD_REQUEST, "No se pudo importar el PDF.", exception);
+            throw new ResponseStatusException(BAD_REQUEST, "No se pudo completar la acción.", exception);
         }
     }
 

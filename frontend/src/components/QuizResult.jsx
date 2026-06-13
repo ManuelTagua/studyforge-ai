@@ -8,6 +8,16 @@ function normalizeQuizContent(content) {
     .trim();
 }
 
+function stripInlineMarkdown(value) {
+  return (value || '')
+    .replace(/^\s*#{1,6}\s*/, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^[-*]\s+/, '')
+    .trim();
+}
+
 function parseQuiz(content) {
   const normalizedContent = normalizeQuizContent(content);
   const questionPattern =
@@ -27,10 +37,10 @@ function parseQuiz(content) {
     if (questionText && optionMatches.length >= 4) {
       questions.push({
         number: Number(match[1]),
-        question: questionText,
+        question: stripInlineMarkdown(questionText),
         options: optionMatches.slice(0, 4).map((optionMatch) => ({
           letter: optionMatch[1],
-          text: optionMatch[2].trim()
+          text: stripInlineMarkdown(optionMatch[2])
         })),
         answer: answerMatch?.[1] || ''
       });

@@ -40,7 +40,7 @@ function HomePage() {
       setOriginalText('');
       setSuccessMessage('Tema guardado correctamente.');
     } catch (error) {
-      setErrorMessage('No hemos podido guardar el tema ahora mismo. Inténtalo de nuevo en unos instantes.');
+      setErrorMessage('No se pudo completar la acción. Inténtalo de nuevo en unos segundos.');
     } finally {
       setIsSaving(false);
     }
@@ -71,11 +71,11 @@ function HomePage() {
     } catch (error) {
       const message = error.message || '';
       if (message.includes('texto extraíble')) {
-        setErrorMessage('El PDF no contiene texto extraíble.');
+        setErrorMessage('No hemos podido extraer texto de este PDF. Puede que sea un PDF escaneado o basado en imágenes.');
       } else if (message.includes('no es válido') || message.includes('Selecciona')) {
         setErrorMessage('El archivo seleccionado no es válido.');
       } else {
-        setErrorMessage('No se pudo importar el PDF.');
+        setErrorMessage('No se pudo completar la acción. Inténtalo de nuevo en unos segundos.');
       }
     } finally {
       setIsImportingPdf(false);
@@ -86,11 +86,18 @@ function HomePage() {
     <section className="page-grid home-layout">
       <div className="hero-copy">
         <p className="eyebrow">Local study workspace</p>
-        <h1>StudyForge AI</h1>
+        <h1 className="hero-title">StudyForge AI</h1>
         <p className="subtitle">
-          Guarda tus apuntes por temas y prepara la base para generar resúmenes,
-          quizzes, flashcards y explicaciones con IA más adelante.
+          Guarda tus apuntes por temas y genera resúmenes, quizzes, flashcards y explicaciones
+          fáciles con IA para estudiar mejor.
         </p>
+        <div className="portfolio-feature-list" aria-label="Qué hace StudyForge AI">
+          <span>Importa PDFs o pega apuntes</span>
+          <span>Genera resúmenes con IA</span>
+          <span>Crea quizzes para practicar</span>
+          <span>Convierte contenido en flashcards</span>
+          <span>Guarda tus apuntes localmente</span>
+        </div>
       </div>
 
       <form className="topic-form" onSubmit={handleSubmit}>

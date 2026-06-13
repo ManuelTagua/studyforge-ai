@@ -16,7 +16,7 @@ async function request(path, options = {}) {
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || 'No se pudo completar la petición');
+    throw new Error(message || 'No se pudo completar la acción.');
   }
 
   if (response.status === 204) {

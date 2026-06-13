@@ -172,7 +172,7 @@ function TopicDetailPage() {
         }
       } catch (error) {
         if (isMounted) {
-          setErrorMessage('No hemos podido abrir este tema ahora mismo. Vuelve a intentarlo en unos instantes.');
+          setErrorMessage('No se pudo completar la acción. Inténtalo de nuevo en unos segundos.');
         }
       } finally {
         if (isMounted) {
@@ -249,20 +249,15 @@ function TopicDetailPage() {
           : 'Resumen generado correctamente.'
       );
     } catch (error) {
-      const message = error.message || '';
-      if (message.includes('API key')) {
-        setErrorMessage('Gemini no está configurado todavía. Añade GOOGLE_API_KEY o GEMINI_API_KEY.');
-      } else {
-        setErrorMessage(
-          option.id === 'quiz'
-            ? 'No se pudo generar el quiz. Intentalo de nuevo en unos instantes.'
-            : option.id === 'flashcards'
-            ? 'No se pudieron generar las flashcards. Intentalo de nuevo en unos instantes.'
-            : option.id === 'explanation'
-            ? 'No se pudo generar la explicación. Intentalo de nuevo en unos instantes.'
-            : 'No se pudo generar el resumen. Inténtalo de nuevo en unos instantes.'
-        );
-      }
+      setErrorMessage(
+        option.id === 'quiz'
+          ? 'No se pudo generar el quiz. Inténtalo de nuevo en unos segundos.'
+          : option.id === 'flashcards'
+          ? 'No se pudieron generar las flashcards. Inténtalo de nuevo en unos segundos.'
+          : option.id === 'explanation'
+          ? 'No se pudo generar la explicación. Inténtalo de nuevo en unos segundos.'
+          : 'No se pudo generar el resumen. Inténtalo de nuevo en unos segundos.'
+      );
     } finally {
       setIsGeneratingSummary(false);
       setIsGeneratingQuiz(false);
@@ -274,7 +269,7 @@ function TopicDetailPage() {
   return (
     <section className="page-section">
       <Link className="back-link" to="/history">
-        Volver al historial
+        Volver a Mis apuntes
       </Link>
 
       {isLoading && <LoadingSpinner label="Cargando tema" />}
@@ -317,7 +312,7 @@ function TopicDetailPage() {
 
             <aside className="topic-side-panel" aria-label="Estado de IA">
               <p className="eyebrow">Preparado para IA</p>
-              <h2>Resumen con Gemini</h2>
+              <h2>Herramientas de estudio</h2>
               <p>
                 El resumen, el quiz, las flashcards y la explicación fácil ya pueden generarse con IA.
               </p>

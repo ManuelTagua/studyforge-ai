@@ -4,6 +4,8 @@ import MarkdownContent from './MarkdownContent.jsx';
 function cleanCardText(value) {
   return value
     .trim()
+    .replace(/^\s*#{1,6}\s*/, '')
+    .replace(/^[-*]\s+/, '')
     .replace(/^\*+|\*+$/g, '')
     .trim();
 }

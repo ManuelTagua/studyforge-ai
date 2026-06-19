@@ -15,10 +15,11 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
         .allowedOrigins(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "https://studyforge-ai-umber.vercel.app"
-        )
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://studyforge-ai-umber.vercel.app",
+    "https://studyforge.manueltagua.com"
+)
         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         .allowedHeaders("*")
         .exposedHeaders("*");

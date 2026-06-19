@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTopic, importPdf } from '../api/topics.js';
+import { useUsageLimits } from '../hooks/useUsageLimits.js';
+import {
+  formatRemainingTime,
+  getUsageLimitStatus,
+  USAGE_ACTIONS
+} from '../utils/usageLimits.js';
+
+const PDF_USAGE_ACTIONS = [USAGE_ACTIONS.PDF_IMPORT];
+
+function getPdfLimitMessage(limit) {
+  return `Ya has importado un PDF en las últimas 24 horas. Podrás volver a importar otro en ${formatRemainingTime(limit.remainingMs)}.`;
+}
 
 function HomePage() {
   const navigate = useNavigate();
@@ -13,6 +25,8 @@ function HomePage() {
   const [isImportingPdf, setIsImportingPdf] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const { limits, markUsage, refreshLimits } = useUsageLimits(PDF_USAGE_ACTIONS);
+  const pdfUsage = limits[USAGE_ACTIONS.PDF_IMPORT];
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -50,6 +64,13 @@ function HomePage() {
     setSuccessMessage('');
     setErrorMessage('');
 
+    const currentPdfUsage = getUsageLimitStatus(USAGE_ACTIONS.PDF_IMPORT);
+    if (!currentPdfUsage.isAvailable) {
+      refreshLimits();
+      setErrorMessage(getPdfLimitMessage(currentPdfUsage));
+      return;
+    }
+
     if (!selectedPdf) {
       setErrorMessage('Selecciona un archivo PDF para importarlo.');
       return;
@@ -63,6 +84,7 @@ function HomePage() {
     try {
       setIsImportingPdf(true);
       const createdTopic = await importPdf(selectedPdf, pdfTitle);
+      markUsage(USAGE_ACTIONS.PDF_IMPORT);
       setSelectedPdf(null);
       setPdfTitle('');
       navigate(`/topics/${createdTopic.id}`, {
@@ -151,9 +173,13 @@ function HomePage() {
               onChange={(event) => setPdfTitle(event.target.value)}
               placeholder="Se usará el nombre del archivo si lo dejas vacío"
               maxLength={180}
+              disabled={!pdfUsage.isAvailable}
             />
 
-            <label className="pdf-dropzone" htmlFor="topic-pdf">
+            <label
+              className={`pdf-dropzone${pdfUsage.isAvailable ? '' : ' usage-limit-reached'}`}
+              htmlFor="topic-pdf"
+            >
               <span className="pdf-icon" aria-hidden="true">PDF</span>
               <span className="pdf-title">Selecciona un archivo PDF</span>
               <span className="pdf-help">Extraeremos el texto y crearemos un tema automáticamente.</span>
@@ -162,6 +188,7 @@ function HomePage() {
                 type="file"
                 accept="application/pdf,.pdf"
                 onChange={(event) => setSelectedPdf(event.target.files?.[0] || null)}
+                disabled={!pdfUsage.isAvailable}
               />
             </label>
 
@@ -174,6 +201,11 @@ function HomePage() {
             <p className="status-message info">
               Los PDFs escaneados o basados en imagen pueden no contener texto extraíble.
             </p>
+            {pdfUsage.isAvailable ? (
+              <p className="status-message info">Importaciones PDF disponibles: 1 de 1.</p>
+            ) : (
+              <p className="status-message error">{getPdfLimitMessage(pdfUsage)}</p>
+            )}
           </div>
         )}
 
@@ -187,7 +219,11 @@ function HomePage() {
         )}
 
         {inputMode === 'pdf' && (
-          <button className="primary-button" type="submit" disabled={isImportingPdf}>
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={isImportingPdf || !pdfUsage.isAvailable}
+          >
             {isImportingPdf ? 'Importando...' : 'Importar PDF'}
           </button>
         )}

@@ -342,6 +342,11 @@ textarea:focus {
   pointer-events: none;
 }
 
+.pdf-dropzone.usage-limit-reached {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
 .pdf-icon {
   display: grid;
   width: 54px;
@@ -638,7 +643,7 @@ textarea:focus {
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
-.generation-card:hover {
+.generation-card:hover:not(:disabled) {
   border-color: var(--primary);
   background: var(--surface-muted);
   transform: translateY(-2px);
@@ -647,6 +652,10 @@ textarea:focus {
 .generation-card:disabled {
   cursor: wait;
   opacity: 0.72;
+}
+
+.generation-card.usage-limit-reached {
+  cursor: not-allowed;
 }
 
 .generation-icon {

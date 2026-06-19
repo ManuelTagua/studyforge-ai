@@ -12,7 +12,13 @@ import FlashcardsResult from '../components/FlashcardsResult.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import MarkdownContent from '../components/MarkdownContent.jsx';
 import QuizResult from '../components/QuizResult.jsx';
+import { useUsageLimits } from '../hooks/useUsageLimits.js';
 import { formatDate } from '../utils/date.js';
+import {
+  formatRemainingTime,
+  getUsageLimitStatus,
+  USAGE_ACTIONS
+} from '../utils/usageLimits.js';
 
 const generationOptions = [
   {
@@ -40,6 +46,33 @@ const generationOptions = [
     icon: 'explain'
   }
 ];
+
+const GENERATION_USAGE_ACTIONS = Object.freeze({
+  summary: USAGE_ACTIONS.SUMMARY,
+  quiz: USAGE_ACTIONS.QUIZ,
+  flashcards: USAGE_ACTIONS.FLASHCARDS,
+  explanation: USAGE_ACTIONS.SIMPLIFIED_EXPLANATION
+});
+
+const AI_USAGE_ACTIONS = Object.values(GENERATION_USAGE_ACTIONS);
+
+const generationLimitLabels = Object.freeze({
+  summary: 'la generación de resumen',
+  quiz: 'la generación de quiz',
+  flashcards: 'la generación de flashcards',
+  explanation: 'la explicación simplificada'
+});
+
+const generationProgressMessages = Object.freeze({
+  summary: 'Generando resumen...',
+  quiz: 'Generando quiz...',
+  flashcards: 'Generando flashcards...',
+  explanation: 'Generando explicación...'
+});
+
+function getGenerationLimitMessage(optionId, limit) {
+  return `Ya has usado ${generationLimitLabels[optionId]} en las últimas 24 horas. Podrás volver a usarla en ${formatRemainingTime(limit.remainingMs)}.`;
+}
 
 const resultTabs = [
   { id: 'summary', label: 'Resumen', type: 'SUMMARY' },
@@ -153,6 +186,11 @@ function TopicDetailPage() {
   const [noticeMessage, setNoticeMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
   const [activeTab, setActiveTab] = useState('summary');
+  const {
+    limits: generationLimits,
+    markUsage,
+    refreshLimits
+  } = useUsageLimits(AI_USAGE_ACTIONS);
 
   useEffect(() => {
     let isMounted = true;
@@ -206,10 +244,22 @@ function TopicDetailPage() {
     return generatedContents.find((content) => content.type === activeType);
   }, [activeTab, generatedContents]);
 
+  const availableGenerationUses = AI_USAGE_ACTIONS.filter(
+    (action) => generationLimits[action].isAvailable
+  ).length;
+
   async function handleGenerationClick(option) {
     setNoticeMessage('');
     setSuccessMessage('');
     setErrorMessage('');
+
+    const usageAction = GENERATION_USAGE_ACTIONS[option.id];
+    const currentUsage = getUsageLimitStatus(usageAction);
+    if (!currentUsage.isAvailable) {
+      refreshLimits();
+      setNoticeMessage(getGenerationLimitMessage(option.id, currentUsage));
+      return;
+    }
 
     try {
       const isQuiz = option.id === 'quiz';
@@ -234,6 +284,7 @@ function TopicDetailPage() {
         : isExplanation
         ? await generateExplanation(id)
         : await generateSummary(id);
+      markUsage(usageAction);
       setGeneratedContents((currentContents) => [
         generatedContent,
         ...currentContents.filter((content) => content.id !== generatedContent.id)
@@ -325,40 +376,43 @@ function TopicDetailPage() {
                 <p className="eyebrow">Generación IA</p>
                 <h2>Generar contenido con IA</h2>
               </div>
-              {noticeMessage && <p className="status-message info compact">{noticeMessage}</p>}
+              <p className={`status-message ${noticeMessage ? 'error' : 'info'} compact`}>
+                {noticeMessage || `Usos de IA disponibles: ${availableGenerationUses} de 4.`}
+              </p>
             </div>
 
             <div className="generation-card-grid">
-              {generationOptions.map((option) => (
-                <button
-                  className="generation-card"
-                  type="button"
-                  key={option.id}
-                  onClick={() => handleGenerationClick(option)}
-                  disabled={
-                    (option.id === 'summary' && isGeneratingSummary) ||
-                    (option.id === 'quiz' && isGeneratingQuiz) ||
-                    (option.id === 'flashcards' && isGeneratingFlashcards) ||
-                    (option.id === 'explanation' && isGeneratingExplanation)
-                  }
-                >
-                  <span className="generation-icon">
-                    <AiIcon type={option.icon} />
-                  </span>
-                  <span className="generation-title">{option.title}</span>
-                  <span className="generation-description">
-                    {option.id === 'summary' && isGeneratingSummary
-                      ? 'Generando resumen...'
-                      : option.id === 'quiz' && isGeneratingQuiz
-                      ? 'Generando quiz...'
-                      : option.id === 'flashcards' && isGeneratingFlashcards
-                      ? 'Generando flashcards...'
-                      : option.id === 'explanation' && isGeneratingExplanation
-                      ? 'Generando explicación...'
-                      : option.description}
-                  </span>
-                </button>
-              ))}
+              {generationOptions.map((option) => {
+                const usageLimit = generationLimits[GENERATION_USAGE_ACTIONS[option.id]];
+                const isLimitReached = !usageLimit.isAvailable;
+                const isGenerating =
+                  (option.id === 'summary' && isGeneratingSummary) ||
+                  (option.id === 'quiz' && isGeneratingQuiz) ||
+                  (option.id === 'flashcards' && isGeneratingFlashcards) ||
+                  (option.id === 'explanation' && isGeneratingExplanation);
+
+                return (
+                  <button
+                    className={`generation-card${isLimitReached ? ' usage-limit-reached' : ''}`}
+                    type="button"
+                    key={option.id}
+                    onClick={() => handleGenerationClick(option)}
+                    disabled={isGenerating || isLimitReached}
+                  >
+                    <span className="generation-icon">
+                      <AiIcon type={option.icon} />
+                    </span>
+                    <span className="generation-title">{option.title}</span>
+                    <span className="generation-description">
+                      {isGenerating
+                        ? generationProgressMessages[option.id]
+                        : isLimitReached
+                        ? getGenerationLimitMessage(option.id, usageLimit)
+                        : option.description}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </section>
 

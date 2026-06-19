@@ -1,4 +1,10 @@
-const API_URL = "https://studyforge-ai-314w.onrender.com/api";
+const LOCAL_API_BASE_URL = 'http://localhost:8080/api';
+const PRODUCTION_API_BASE_URL = 'https://studyforge-ai-314w.onrender.com/api';
+
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_URL = (
+  configuredApiBaseUrl || (import.meta.env.PROD ? PRODUCTION_API_BASE_URL : LOCAL_API_BASE_URL)
+).replace(/\/+$/, '');
 
 async function request(path, options = {}) {
   const isFormData = options.body instanceof FormData;

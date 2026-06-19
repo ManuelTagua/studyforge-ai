@@ -46,14 +46,16 @@ function HomePage() {
 
     try {
       setIsSaving(true);
-      await createTopic({
+      const payload = {
         title: title.trim(),
         originalText: originalText.trim()
-      });
+      };
+      await createTopic(payload);
       setTitle('');
       setOriginalText('');
       setSuccessMessage('Tema guardado correctamente.');
     } catch (error) {
+      console.error('Error al guardar el tema:', error);
       setErrorMessage('No se pudo completar la acción. Inténtalo de nuevo en unos segundos.');
     } finally {
       setIsSaving(false);

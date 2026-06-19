@@ -1,4 +1,4 @@
-const API_BASE_URL = 'const API_URL = "https://studyforge-ai-314w.onrender.com/api";';
+const API_URL = "https://studyforge-ai-314w.onrender.com/api";
 
 async function request(path, options = {}) {
   const isFormData = options.body instanceof FormData;

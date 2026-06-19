@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://studyforge-ai-314w.onrender.com';
 
 async function request(path, options = {}) {
   const isFormData = options.body instanceof FormData;

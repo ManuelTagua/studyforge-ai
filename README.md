@@ -4,6 +4,10 @@ StudyForge AI es una aplicación web desarrollada como proyecto de aprendizaje q
 
 La aplicación permite crear temas manualmente o importar documentos PDF, almacenarlos en una base de datos y generar recursos de estudio como resúmenes, cuestionarios tipo test, flashcards y explicaciones simplificadas utilizando Google Gemini.
 
+## Demo
+
+https://studyforge.manueltagua.com
+
 ---
 
 # Características
@@ -324,6 +328,19 @@ Posibles ampliaciones del proyecto:
 - Generación de mapas conceptuales.
 - Generación de exámenes completos.
 - Despliegue en la nube.
+
+---
+
+# Despliegue
+
+La aplicación se encuentra desplegada en la nube utilizando una arquitectura Full Stack:
+
+- Frontend: Vercel
+- Backend: Render
+- Base de datos: Aiven MySQL Cloud
+- IA: Google Gemini API
+
+La comunicación entre servicios se realiza mediante API REST y variables de entorno seguras.
 
 ---
 
